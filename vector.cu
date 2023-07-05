@@ -82,7 +82,7 @@ double VectorMaxDifference(Vector vec_cpu, GPUVector vec_gpu)
    assert(vec_gpu.len > 0);
 
    Vector v_cpu2 = VectorInit(vec_cpu.len);
-   CopyVectorFromGPU(vec_gpu, v_cpu2);
+   AssignVectorFromGPU(vec_gpu, v_cpu2);
 
    double max = fabs(vec_cpu.id[0] - v_cpu2.id[0]);
    for(long int i = 1; i < vec_cpu.len; ++i) {
@@ -96,13 +96,13 @@ double VectorMaxDifference(Vector vec_cpu, GPUVector vec_gpu)
    return max;
 }
 
-void CopyVectorFromGPU(GPUVector vec_gpu, Vector vec_cpu)
+void AssignVectorFromGPU(GPUVector vec_gpu, Vector vec_cpu)
 {
    assert(vec_gpu.len == vec_cpu.len);
    ASSERT_CUDA_SUCCESS( cudaMemcpy(vec_cpu.id, vec_gpu.id, vec_cpu.nbytes, cudaMemcpyDeviceToHost) );
 }
 
-void CopyVectorToGPU(Vector vec_cpu, GPUVector vec_gpu)
+void AssignVectorToGPU(Vector vec_cpu, GPUVector vec_gpu)
 {
    assert(vec_cpu.len == vec_gpu.len);
    ASSERT_CUDA_SUCCESS( cudaMemcpy(vec_gpu.id, vec_cpu.id, vec_cpu.nbytes, cudaMemcpyHostToDevice) );

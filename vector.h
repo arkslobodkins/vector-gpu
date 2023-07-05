@@ -37,6 +37,6 @@ GPUVector GPUVectorCopyInit(Vector v_cpu);
 void GPUVectorFree(GPUVector v);
 
 double VectorMaxDifference(Vector v_cpu, GPUVector v_gpu);
-void CopyVectorFromGPU(GPUVector vec_gpu, Vector vec_cpu);
-void CopyVectorToGPU(Vector vec_cpu, GPUVector vec_gpu);
+void AssignVectorFromGPU(GPUVector vec_gpu, Vector vec_cpu);
+void AssignVectorToGPU(Vector vec_cpu, GPUVector vec_gpu);
 

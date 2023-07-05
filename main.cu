@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "get_time.h"
+
 #include "vector.h"
 
-int main(int argc, char *argv[])
+int main(void)
 {
    printf("\n");
    int dev = 0;
@@ -14,8 +15,8 @@ int main(int argc, char *argv[])
       exit(EXIT_FAILURE);
    }
 
-   long int n = 2 << 25;
-   double c1 = 0.5, c2 = 0.75;
+   const long int n = 2 << 25;
+   const double c1 = 0.5, c2 = 0.75;
    Vector v1 = VectorInitRandom(n);
    Vector v2 = VectorInitRandom(n);
    Vector v3 = VectorInit(n);
