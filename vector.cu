@@ -4,8 +4,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void VectorAddCPU(double c1, double c2, Vector v1, Vector v2, Vector v3)
 {
-   assert(v1.len == v2.len);
-   assert(v2.len == v3.len);
    for(long int i = 0; i < v1.len; ++i) {
       v3.id[i] = c1*v1.id[i] + c2*v2.id[i];
    }
