@@ -29,8 +29,12 @@ int main(void)
 
    const dim3 block(256);
    const dim3 grid((n+block.x-1)/block.x);
-   TIME( (VectorAddGPU<<< grid, block >>>(c1, c2, v1_gpu, v2_gpu, v3_gpu)) );
+
+   double start_gpu = get_cur_time();
+   VectorAddGPU<<< grid, block >>>(c1, c2, v1_gpu, v2_gpu, v3_gpu);
    cudaDeviceSynchronize();
+   printf("vector add on GPU took: %.4e seconds\n", get_cur_time() - start_gpu);
+
    double diff = VectorMaxDifference(v3, v3_gpu);
    printf("maximum vector difference = %.4e\n", diff);
 
