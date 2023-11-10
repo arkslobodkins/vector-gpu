@@ -240,7 +240,7 @@ Vector<T> & Vector<T>::operator=(const Vector<T> & v) noexcept
 
 
 template<typename T>
-Vector<T> & Vector<T>::operator=(Vector && v) noexcept
+Vector<T> & Vector<T>::operator=(Vector<T> && v) noexcept
 {
    ASSERT_CPU(sz == v.sz);
    std::free(data);
