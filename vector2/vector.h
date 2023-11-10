@@ -36,6 +36,12 @@ template<typename T>
 class GPUVector;
 
 template<typename T>
+GPUVector<T> ToDevice(const Vector<T> & x) noexcept;
+
+template<typename T>
+Vector<T> FromDevice(const GPUVector<T> & x) noexcept;
+
+template<typename T>
 void ToDevice(const Vector<T> & x, GPUVector<T> & y) noexcept;
 
 template<typename T>
@@ -77,6 +83,8 @@ public:
    T & operator[](long int i) noexcept { return data[i]; }
    const T & operator[](long int i) const noexcept { return data[i]; }
 
+   friend GPUVector<T> ToDevice<>(const Vector<T> & x) noexcept;
+   friend Vector<T> FromDevice<>(const GPUVector<T> & x) noexcept;
    friend void ToDevice<>(const Vector<T> & x, GPUVector<T> & y) noexcept;
    friend void FromDevice<>(const GPUVector<T> & x, Vector<T> & y) noexcept;
 
@@ -103,8 +111,10 @@ public:
    __device__ auto size() const;
    auto size_cpu() const;
 
-   friend void ToDevice<T>(const Vector<T> & x, GPUVector<T> & y) noexcept;
-   friend void FromDevice<T>(const GPUVector<T> & x, Vector<T> & y) noexcept;
+   friend GPUVector<T> ToDevice<>(const Vector<T> & x) noexcept;
+   friend Vector<T> FromDevice<>(const GPUVector<T> & x) noexcept;
+   friend void ToDevice<>(const Vector<T> & x, GPUVector<T> & y) noexcept;
+   friend void FromDevice<>(const GPUVector<T> & x, Vector<T> & y) noexcept;
 
 private:
    T* ptr;
@@ -265,6 +275,24 @@ template<typename T>
 auto Vector<T>::size() const noexcept
 {
    return sz;
+}
+
+
+template<typename T>
+GPUVector<T> ToDevice(const Vector<T> & x) noexcept
+{
+   GPUVector<T> y(x.sz);
+   ToDevice(x, y);
+   return y;
+}
+
+
+template<typename T>
+Vector<T> FromDevice(const GPUVector<T> & x) noexcept
+{
+   Vector<T> y(x.sz);
+   FromDevice(x, y);
+   return y;
 }
 
 

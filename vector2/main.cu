@@ -49,9 +49,9 @@ int main()
    v1.rand();
    v2.rand();
 
-   GPUVector<float> v1_gpu(n), v2_gpu(n), v3_gpu(n);
-   ToDevice(v1, v1_gpu);
-   ToDevice(v2, v2_gpu);
+   GPUVector<float> v1_gpu = ToDevice(v1);
+   GPUVector<float> v2_gpu = ToDevice(v2);
+   GPUVector<float> v3_gpu(n);
 
    CPUVectorAdd(v1, v2, v3);
 
