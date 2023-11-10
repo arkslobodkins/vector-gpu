@@ -51,22 +51,13 @@ struct default_tol
 };
 
 template<typename T>
-bool within_tol_abs(T val1, T val2, T tol = default_tol<T>::x) noexcept
-{
-   T abs_val = val1 > val2 ? (val1 - val2) : (val2 - val1);
-   return abs_val <= tol;
-}
+bool within_tol_abs(T val1, T val2, T tol = default_tol<T>::x) noexcept;
 
 template<typename T>
-bool within_tol_abs(const Vector<T> & v1, const Vector<T> & v2, T tol = default_tol<T>::x) noexcept
-{
-   ASSERT_CPU(v1.size() == v2.size());
-   for(auto i = 0L; i < v1.size(); ++i)
-      if(!within_tol_abs(v1[i], v2[i], tol))
-         return false;
-   return true;
-}
+bool within_tol_abs(const Vector<T> & v1, const Vector<T> & v2, T tol = default_tol<T>::x) noexcept;
 
+template<typename T>
+bool is_equal(const Vector<T> & v1, const Vector<T> & v2) noexcept;
 
 template<typename T>
 class Vector
@@ -299,4 +290,30 @@ void print(const Vector<T> & v) noexcept
       std::cout << v[i] << '\n';
 }
 
+template<typename T>
+bool within_tol_abs(T val1, T val2, T tol) noexcept
+{
+   T abs_val = val1 > val2 ? (val1 - val2) : (val2 - val1);
+   return abs_val <= tol;
+}
+
+template<typename T>
+bool within_tol_abs(const Vector<T> & v1, const Vector<T> & v2, T tol) noexcept
+{
+   ASSERT_CPU(v1.size() == v2.size());
+   for(auto i = 0L; i < v1.size(); ++i)
+      if(!within_tol_abs(v1[i], v2[i], tol))
+         return false;
+   return true;
+}
+
+template<typename T>
+bool is_equal(const Vector<T> & v1, const Vector<T> & v2) noexcept
+{
+   ASSERT_CPU(v1.size() == v2.size());
+   for(auto i = 0L; i < v1.size(); ++i)
+      if(v1[i] != v2[i])
+         return false;
+   return true;
+}
 
