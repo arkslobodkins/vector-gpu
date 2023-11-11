@@ -79,7 +79,7 @@ public:
    ~Vector() noexcept;
 
    void rand() noexcept;
-   auto size() const noexcept;
+   size_type size() const noexcept;
 
    T & operator[](size_type i) noexcept { return data[i]; }
    const T & operator[](size_type i) const noexcept { return data[i]; }
@@ -110,7 +110,7 @@ public:
 
    T* data() noexcept;
    const T* data() const noexcept;
-   auto size() const noexcept;
+   size_type size() const noexcept;
 
    friend GPUVector<T> ToDevice<>(const Vector<T> & x) noexcept;
    friend Vector<T> FromDevice<>(const GPUVector<T> & x) noexcept;
@@ -229,7 +229,7 @@ const T* GPUVector<T>::data() const noexcept
 
 
 template<typename T>
-auto GPUVector<T>::size() const noexcept
+auto GPUVector<T>::size() const noexcept ->size_type
 {
    return sz;
 }
@@ -313,7 +313,7 @@ void Vector<T>::rand() noexcept
 
 
 template<typename T>
-auto Vector<T>::size() const noexcept
+auto Vector<T>::size() const noexcept ->size_type
 {
    return sz;
 }

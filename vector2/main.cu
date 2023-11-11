@@ -55,7 +55,7 @@ int main()
       CPUVectorAdd(v1, v2, v3);
 
       timer t;
-      GPUVectorAdd<type><<< 512, 256 >>>(v1_gpu.pass(), v2_gpu.pass(), v3_gpu.pass());
+      GPUVectorAdd<type><<< 1024, 512 >>>(v1_gpu.pass(), v2_gpu.pass(), v3_gpu.pass());
       ASSERT_CUDA_SUCCESS( cudaDeviceSynchronize() );
       std::printf("GPU vector add took %.4e seconds\n\n", t.wall_time());
 
