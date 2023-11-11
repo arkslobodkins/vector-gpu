@@ -126,10 +126,14 @@ private:
 template<typename T>
 GPUVector<T>::GPUVector(size_type n) noexcept
 {
-   ASSERT_CPU(n > -1);
+   ASSERT_CPU( n > -1 );
    sz = n;
-   ASSERT_CUDA_SUCCESS( cudaMalloc((void**) &ptr, sz*sizeof(T)) );
-   ASSERT_CUDA_SUCCESS( cudaMemset(ptr, 0x0, sz*sizeof(T)) );
+
+   ptr = nullptr;
+   if(n > 0) {
+      ASSERT_CUDA_SUCCESS( cudaMalloc((void**) &ptr, sz*sizeof(T)) );
+      ASSERT_CUDA_SUCCESS( cudaMemset(ptr, 0x0, sz*sizeof(T)) );
+   }
 }
 
 
@@ -137,8 +141,12 @@ template<typename T>
 GPUVector<T>::GPUVector(const GPUVector<T> & v) noexcept
 {
    sz = v.sz;
-   ASSERT_CUDA_SUCCESS( cudaMalloc((void**) &ptr, sz*sizeof(T)) );
-   ASSERT_CUDA_SUCCESS( cudaMemcpy(ptr, v.ptr, sz*sizeof(T), cudaMemcpyDeviceToDevice) );
+
+   ptr = nullptr;
+   if(sz > 0) {
+      ASSERT_CUDA_SUCCESS( cudaMalloc((void**) &ptr, sz*sizeof(T)) );
+      ASSERT_CUDA_SUCCESS( cudaMemcpy(ptr, v.ptr, sz*sizeof(T), cudaMemcpyDeviceToDevice) );
+   }
 }
 
 
@@ -153,8 +161,10 @@ GPUVector<T>::GPUVector(GPUVector<T> && v) noexcept
 template<typename T>
 GPUVector<T> & GPUVector<T>::operator=(const GPUVector<T> & v) noexcept
 {
-   ASSERT_CPU(sz == v.sz);
-   ASSERT_CUDA_SUCCESS( cudaMemcpy(ptr, v.ptr, sz*sizeof(T), cudaMemcpyDeviceToDevice) );
+   ASSERT_CPU( sz == v.sz );
+   if(this != &v && sz > 0) {
+      ASSERT_CUDA_SUCCESS( cudaMemcpy(ptr, v.ptr, sz*sizeof(T), cudaMemcpyDeviceToDevice) );
+   }
    return *this;
 }
 
@@ -162,11 +172,13 @@ GPUVector<T> & GPUVector<T>::operator=(const GPUVector<T> & v) noexcept
 template<typename T>
 GPUVector<T> & GPUVector<T>::operator=(GPUVector<T> && v) noexcept
 {
-   ASSERT_CPU(sz == v.sz);
-   ASSERT_CUDA_SUCCESS( cudaFree(ptr) );
+   ASSERT_CPU( sz == v.sz );
+   if(this != &v) {
+      ASSERT_CUDA_SUCCESS( cudaFree(ptr) );
 
-   sz = std::exchange(v.sz, 0);
-   ptr = std::exchange(v.ptr, nullptr);
+      sz = std::exchange(v.sz, 0);
+      ptr = std::exchange(v.ptr, nullptr);
+   }
    return *this;
 }
 
@@ -203,9 +215,12 @@ auto GPUVector<T>::size() const noexcept
 template<typename T>
 Vector<T>::Vector(size_type n) noexcept
 {
-   ASSERT_CPU(n > -1);
+   ASSERT_CPU( n > -1 );
    sz = n;
-   ASSERT_CPU( data = (T*)std::calloc(sz, sizeof(T)) );
+
+   data = nullptr;
+   if(n > 0)
+      ASSERT_CPU( data = (T*)std::calloc(sz, sizeof(T)) );
 }
 
 
@@ -213,8 +228,12 @@ template<typename T>
 Vector<T>::Vector(const Vector<T> & v) noexcept
 {
    sz = v.sz;
-   ASSERT_CPU( data = (T*)std::malloc(sz*sizeof(T)) );
-   std::memcpy(data, v.data, sz*sizeof(T));
+
+   data = nullptr;
+   if(sz > 0) {
+      ASSERT_CPU( data = (T*)std::malloc(sz*sizeof(T)) );
+      std::memcpy(data, v.data, sz*sizeof(T));
+   }
 }
 
 
@@ -229,8 +248,10 @@ Vector<T>::Vector(Vector<T> && v) noexcept
 template<typename T>
 Vector<T> & Vector<T>::operator=(const Vector<T> & v) noexcept
 {
-   ASSERT_CPU(sz == v.sz);
-   std::memcpy(data, v.data, sz*sizeof(T));
+   ASSERT_CPU( sz == v.sz );
+   if(this != &v && sz > 0) {
+      std::memcpy(data, v.data, sz*sizeof(T));
+   }
    return *this;
 }
 
@@ -238,11 +259,13 @@ Vector<T> & Vector<T>::operator=(const Vector<T> & v) noexcept
 template<typename T>
 Vector<T> & Vector<T>::operator=(Vector<T> && v) noexcept
 {
-   ASSERT_CPU(sz == v.sz);
-   std::free(data);
+   ASSERT_CPU( sz == v.sz );
+   if(this != &v) {
+      std::free(data);
 
-   sz = std::exchange(v.sz, 0);
-   data = std::exchange(v.data, nullptr);
+      sz = std::exchange(v.sz, 0);
+      data = std::exchange(v.data, nullptr);
+   }
    return *this;
 }
 
@@ -326,7 +349,7 @@ bool within_tol_abs(T val1, T val2, T tol) noexcept
 template<typename T>
 bool within_tol_abs(const Vector<T> & v1, const Vector<T> & v2, T tol) noexcept
 {
-   ASSERT_CPU(v1.size() == v2.size());
+   ASSERT_CPU( v1.size() == v2.size() );
    for(typename Vector<T>::size_type i = 0L; i < v1.size(); ++i)
       if(!within_tol_abs(v1[i], v2[i], tol))
          return false;
@@ -336,7 +359,7 @@ bool within_tol_abs(const Vector<T> & v1, const Vector<T> & v2, T tol) noexcept
 template<typename T>
 bool is_equal(const Vector<T> & v1, const Vector<T> & v2) noexcept
 {
-   ASSERT_CPU(v1.size() == v2.size());
+   ASSERT_CPU( v1.size() == v2.size() );
    for(typename Vector<T>::size_type i = 0L; i < v1.size(); ++i)
       if(v1[i] != v2[i])
          return false;
