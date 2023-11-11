@@ -33,7 +33,7 @@ __global__ void GPUVectorAdd(long int N, const T* v1, const T* v2, T* v3)
    long int ind = blockIdx.x * blockDim.x + threadIdx.x;
 
    for(; ind < N; ind += blockDim.x*gridDim.x)
-      v3_ptr[ind] = v1_ptr[ind] + v2_ptr[ind];
+      v3[ind] = v1[ind] + v2[ind];
 }
 
 int main()
