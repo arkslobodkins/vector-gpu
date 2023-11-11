@@ -117,10 +117,33 @@ public:
    friend void ToDevice<>(const Vector<T> & x, GPUVector<T> & y) noexcept;
    friend void FromDevice<>(const GPUVector<T> & x, Vector<T> & y) noexcept;
 
+   struct GPUVectorDevice_
+   {
+   public:
+      GPUVectorDevice_(T* d, size_type s) : data{d}, sz{s} {}
+
+      __device__ size_type size() const { return sz; }
+      __device__ T & operator[](size_type i) { return data[i]; }
+      __device__ const T & operator[](size_type i) const { return data[i]; }
+
+   private:
+      T* data;
+      size_type sz;
+   };
+
+   GPUVectorDevice_ pass()
+   {
+      return GPUVectorDevice_{ptr, sz};
+   }
+
 private:
    T* ptr;
    size_type sz;
 };
+
+
+template<typename T>
+using GPUVectorDevice = typename GPUVector<T>::GPUVectorDevice_;
 
 
 template<typename T>
