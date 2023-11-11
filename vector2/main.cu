@@ -44,7 +44,7 @@ int main()
 {
    cudaSetupDevice();
 
-   int n = 1'000'000;
+   long int n = 1 << 10;
    Vector<float> v1(n), v2(n), v3(n);
    v1.rand();
    v2.rand();
