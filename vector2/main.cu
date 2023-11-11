@@ -28,13 +28,9 @@ void CPUVectorAdd(const Vector<T> & v1, const Vector<T> & v2, Vector<T> & v3)
 }
 
 template<typename T>
-__global__ void GPUVectorAdd(const GPUVector<T> & v1, const GPUVector<T> & v2, GPUVector<T> & v3)
+__global__ void GPUVectorAdd(long int N, const T* v1, const T* v2, T* v3)
 {
    long int ind = blockIdx.x * blockDim.x + threadIdx.x;
-   long int N = v1.size();
-   const T* v1_ptr = v1.data();
-   const T* v2_ptr = v2.data();
-   T* v3_ptr = v3.data();
 
    for(; ind < N; ind += blockDim.x*gridDim.x)
       v3_ptr[ind] = v1_ptr[ind] + v2_ptr[ind];
@@ -44,24 +40,26 @@ int main()
 {
    cudaSetupDevice();
 
-   long int n = 1 << 10;
-   Vector<float> v1(n), v2(n), v3(n);
-   v1.rand();
-   v2.rand();
+   {
+      long int n = 1 << 10;
+      Vector<float> v1(n), v2(n), v3(n);
+      v1.rand();
+      v2.rand();
 
-   GPUVector<float> v1_gpu = ToDevice(v1);
-   GPUVector<float> v2_gpu = ToDevice(v2);
-   GPUVector<float> v3_gpu(n);
+      GPUVector<float> v1_gpu = ToDevice(v1);
+      GPUVector<float> v2_gpu = ToDevice(v2);
+      GPUVector<float> v3_gpu(n);
 
-   CPUVectorAdd(v1, v2, v3);
+      CPUVectorAdd(v1, v2, v3);
 
-   timer t_cross{};
-   GPUVectorAdd<<< 512, 256 >>>(v1_gpu, v2_gpu, v3_gpu);
-   ASSERT_CUDA_SUCCESS( cudaDeviceSynchronize() );
-   std::printf("GPUVectorAdd on GPU took: %.4e seconds\n\n", t_cross.wall_time());
+      timer t_cross{};
+      GPUVectorAdd<<< 512, 256 >>>(v1.size(), v1_gpu.data(), v2_gpu.data(), v3_gpu.data());
+      ASSERT_CUDA_SUCCESS( cudaDeviceSynchronize() );
+      std::printf("GPUVectorAdd on GPU took: %.4e seconds\n\n", t_cross.wall_time());
 
-   FromDevice(v3_gpu, v2);
-   assert(within_tol_abs(v2, v3));
+      FromDevice(v3_gpu, v2);
+      assert(within_tol_abs(v2, v3));
+   }
 
    cudaDeviceReset();
    return EXIT_SUCCESS;

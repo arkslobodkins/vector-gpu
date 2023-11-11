@@ -106,10 +106,9 @@ public:
    GPUVector & operator=(GPUVector && v) noexcept;
    ~GPUVector() noexcept;
 
-   __device__ T* data();
-   __device__ const T* data() const;
-   __device__ auto size() const;
-   auto size_cpu() const;
+   T* data();
+   const T* data() const;
+   auto size() const;
 
    friend GPUVector<T> ToDevice<>(const Vector<T> & x) noexcept;
    friend Vector<T> FromDevice<>(const GPUVector<T> & x) noexcept;
@@ -120,6 +119,7 @@ private:
    T* ptr;
    long int sz;
 };
+
 
 template<typename T>
 GPUVector<T>::GPUVector(long int n) noexcept
@@ -178,28 +178,21 @@ GPUVector<T>::~GPUVector<T>() noexcept
 
 
 template<typename T>
-__device__ T* GPUVector<T>::data()
+T* GPUVector<T>::data()
 {
    return ptr;
 }
 
 
 template<typename T>
-__device__ const T* GPUVector<T>::data() const
+const T* GPUVector<T>::data() const
 {
    return ptr;
 }
 
 
 template<typename T>
-__device__ auto GPUVector<T>::size() const
-{
-   return sz;
-}
-
-
-template<typename T>
-auto GPUVector<T>::size_cpu() const
+auto GPUVector<T>::size() const
 {
    return sz;
 }
