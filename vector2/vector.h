@@ -48,7 +48,7 @@ template<typename T>
 void FromDevice(const GPUVector<T> & x, Vector<T> & y) noexcept;
 
 template<typename T>
-void print(const Vector<T> & v) noexcept;
+void print(const Vector<T> & v, bool skip_line = false) noexcept;
 
 template<typename T>
 struct default_tol
@@ -69,8 +69,9 @@ template<typename T>
 class Vector
 {
 public:
+   using size_type = long int;
 
-   Vector(long int n) noexcept;
+   Vector(size_type n) noexcept;
    Vector(const Vector & v) noexcept;
    Vector(Vector && v) noexcept;
    Vector & operator=(const Vector & v) noexcept;
@@ -80,8 +81,8 @@ public:
    void rand() noexcept;
    auto size() const noexcept;
 
-   T & operator[](long int i) noexcept { return data[i]; }
-   const T & operator[](long int i) const noexcept { return data[i]; }
+   T & operator[](size_type i) noexcept { return data[i]; }
+   const T & operator[](size_type i) const noexcept { return data[i]; }
 
    friend GPUVector<T> ToDevice<>(const Vector<T> & x) noexcept;
    friend Vector<T> FromDevice<>(const GPUVector<T> & x) noexcept;
@@ -90,7 +91,7 @@ public:
 
 private:
    T* data;
-   long int sz;
+   size_type sz;
 };
 
 
@@ -98,17 +99,18 @@ template<typename T>
 class GPUVector
 {
 public:
+   using size_type = long int;
 
-   GPUVector(long int n) noexcept;
+   GPUVector(size_type n) noexcept;
    GPUVector(const GPUVector & v) noexcept;
    GPUVector(GPUVector && v) noexcept;
    GPUVector & operator=(const GPUVector & v) noexcept;
    GPUVector & operator=(GPUVector && v) noexcept;
    ~GPUVector() noexcept;
 
-   T* data();
-   const T* data() const;
-   auto size() const;
+   T* data() noexcept;
+   const T* data() const noexcept;
+   auto size() const noexcept;
 
    friend GPUVector<T> ToDevice<>(const Vector<T> & x) noexcept;
    friend Vector<T> FromDevice<>(const GPUVector<T> & x) noexcept;
@@ -117,12 +119,12 @@ public:
 
 private:
    T* ptr;
-   long int sz;
+   size_type sz;
 };
 
 
 template<typename T>
-GPUVector<T>::GPUVector(long int n) noexcept
+GPUVector<T>::GPUVector(size_type n) noexcept
 {
    ASSERT_CPU(n > -1);
    sz = n;
@@ -178,28 +180,28 @@ GPUVector<T>::~GPUVector<T>() noexcept
 
 
 template<typename T>
-T* GPUVector<T>::data()
+T* GPUVector<T>::data() noexcept
 {
    return ptr;
 }
 
 
 template<typename T>
-const T* GPUVector<T>::data() const
+const T* GPUVector<T>::data() const noexcept
 {
    return ptr;
 }
 
 
 template<typename T>
-auto GPUVector<T>::size() const
+auto GPUVector<T>::size() const noexcept
 {
    return sz;
 }
 
 
 template<typename T>
-Vector<T>::Vector(long int n) noexcept
+Vector<T>::Vector(size_type n) noexcept
 {
    ASSERT_CPU(n > -1);
    sz = n;
@@ -259,7 +261,7 @@ void Vector<T>::rand() noexcept
    using namespace std::chrono;
    microseconds ms = duration_cast<microseconds> (system_clock::now().time_since_epoch());
    std::srand(static_cast<unsigned>(std::time(0)) + static_cast<unsigned>(ms.count()));
-   for(auto i = 0L; i < sz; ++i)
+   for(size_type i = 0L; i < sz; ++i)
       data[i] = T(std::rand())/T(RAND_MAX);
 }
 
@@ -304,11 +306,14 @@ void FromDevice(const GPUVector<T> & x, Vector<T> & y) noexcept
    ASSERT_CUDA_SUCCESS( cudaMemcpy(y.data, x.ptr, x.sz*sizeof(T), cudaMemcpyDeviceToHost) );
 }
 
+
 template<typename T>
-void print(const Vector<T> & v) noexcept
+void print(const Vector<T> & v, bool skip_line) noexcept
 {
-   for(auto i = 0L; i < v.size(); ++i)
+   for(typename Vector<T>::size_type i = 0L; i < v.size(); ++i)
       std::cout << v[i] << '\n';
+   if(skip_line)
+      std::cout << std::endl;
 }
 
 template<typename T>
@@ -322,7 +327,7 @@ template<typename T>
 bool within_tol_abs(const Vector<T> & v1, const Vector<T> & v2, T tol) noexcept
 {
    ASSERT_CPU(v1.size() == v2.size());
-   for(auto i = 0L; i < v1.size(); ++i)
+   for(typename Vector<T>::size_type i = 0L; i < v1.size(); ++i)
       if(!within_tol_abs(v1[i], v2[i], tol))
          return false;
    return true;
@@ -332,7 +337,7 @@ template<typename T>
 bool is_equal(const Vector<T> & v1, const Vector<T> & v2) noexcept
 {
    ASSERT_CPU(v1.size() == v2.size());
-   for(auto i = 0L; i < v1.size(); ++i)
+   for(typename Vector<T>::size_type i = 0L; i < v1.size(); ++i)
       if(v1[i] != v2[i])
          return false;
    return true;
