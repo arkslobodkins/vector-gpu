@@ -27,8 +27,9 @@ void CPUVectorAdd(const Vector<T> & v1, const Vector<T> & v2, Vector<T> & v3)
       v3[i] = v1[i] + v2[i];
 }
 
-template<typename T>
-__global__ void GPUVectorAdd(const GPUVectorDevice<T> v1, const GPUVectorDevice<T> v2, GPUVectorDevice<T> v3)
+// V1, V2, V3 do not necessarily have the same value_type
+template<typename V1, typename V2, typename V3>
+__global__ void GPUVectorAdd(const V1 v1, const V2 v2, V3 v3)
 {
    long int ind = blockIdx.x * blockDim.x + threadIdx.x;
    long int N = v1.size();
@@ -48,14 +49,14 @@ int main()
       v1.rand();
       v2.rand();
 
-      GPUVector<type> v1_gpu = ToDevice(v1);
-      GPUVector<type> v2_gpu = ToDevice(v2);
+      const GPUVector<type> v1_gpu = ToDevice(v1);
+      const GPUVector<type> v2_gpu = ToDevice(v2);
       GPUVector<type> v3_gpu(n);
 
       CPUVectorAdd(v1, v2, v3);
 
       timer t;
-      GPUVectorAdd<type><<< 1024, 512 >>>(v1_gpu.pass(), v2_gpu.pass(), v3_gpu.pass());
+      GPUVectorAdd<<< 1024, 512 >>>(v1_gpu.pass(), v2_gpu.pass(), v3_gpu.pass());
       ASSERT_CUDA_SUCCESS( cudaDeviceSynchronize() );
       std::printf("GPU vector add took %.4e seconds\n\n", t.wall_time());
 

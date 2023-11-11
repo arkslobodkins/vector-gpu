@@ -70,6 +70,7 @@ class Vector
 {
 public:
    using size_type = long int;
+   using value_type = T;
 
    Vector(size_type n) noexcept;
    Vector(const Vector & v) noexcept;
@@ -100,6 +101,7 @@ class GPUVector
 {
 public:
    using size_type = long int;
+   using value_type = T;
 
    GPUVector(size_type n) noexcept;
    GPUVector(const GPUVector & v) noexcept;
@@ -131,10 +133,21 @@ public:
       size_type sz;
    };
 
-   GPUVectorDevice_ pass()
+   struct ConstGPUVectorDevice_
    {
-      return GPUVectorDevice_{ptr, sz};
-   }
+   public:
+      ConstGPUVectorDevice_(const T* d, size_type s) : data{d}, sz{s} {}
+
+      __device__ size_type size() const { return sz; }
+      __device__ const T & operator[](size_type i) const { return data[i]; }
+
+   private:
+      const T* data;
+      size_type sz;
+   };
+
+   GPUVectorDevice_ pass() { return GPUVectorDevice_{ptr, sz}; }
+   ConstGPUVectorDevice_ pass() const { return ConstGPUVectorDevice_{ptr, sz}; }
 
 private:
    T* ptr;
@@ -144,6 +157,10 @@ private:
 
 template<typename T>
 using GPUVectorDevice = typename GPUVector<T>::GPUVectorDevice_;
+
+
+template<typename T>
+using ConstGPUVectorDevice = typename GPUVector<T>::ConstGPUVectorDevice_;
 
 
 template<typename T>
