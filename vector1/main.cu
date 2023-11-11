@@ -15,7 +15,7 @@ int main(void)
       exit(EXIT_FAILURE);
    }
 
-   const long int n = 2 << 25;
+   const long int n = 1 << 25;
    const double c1 = 0.5, c2 = 0.75;
    Vector v1 = VectorInitRandom(n);
    Vector v2 = VectorInitRandom(n);
