@@ -8,6 +8,7 @@
 #include <iostream>
 #include <limits>
 #include <utility>
+#include <type_traits>
 
 #include <cuda_runtime.h>
 
@@ -28,6 +29,9 @@
       }                                                                                                           \
    } while(false)                                                                                                 \
 
+
+template<typename U, typename T>
+constexpr bool SameType = std::is_same<U, T>::value;
 
 template<typename T>
 class Vector;
@@ -50,16 +54,16 @@ void FromDevice(const GPUVector<T> & x, Vector<T> & y) noexcept;
 template<typename T>
 void print(const Vector<T> & v, bool skip_line = false) noexcept;
 
-template<typename T>
+template<typename T, std::enable_if_t<std::is_floating_point<T>::value, bool> = true>
 struct default_tol
 {
    static constexpr T x{100 * std::numeric_limits<T>::epsilon()};
 };
 
-template<typename T>
+template<typename T, std::enable_if_t<std::is_floating_point<T>::value, bool> = true>
 bool within_tol_abs(T val1, T val2, T tol = default_tol<T>::x) noexcept;
 
-template<typename T>
+template<typename T, std::enable_if_t<std::is_floating_point<T>::value, bool> = true>
 bool within_tol_abs(const Vector<T> & v1, const Vector<T> & v2, T tol = default_tol<T>::x) noexcept;
 
 template<typename T>
@@ -166,6 +170,7 @@ using ConstGPUVectorDevice = typename GPUVector<T>::ConstGPUVectorDevice_;
 template<typename T>
 GPUVector<T>::GPUVector(size_type n) noexcept
 {
+   static_assert(SameType<T, float> || SameType<T, double> || SameType<T, int> || SameType<T, long int>, "");
    ASSERT_CPU( n > -1 );
    sz = n;
 
@@ -379,14 +384,14 @@ void print(const Vector<T> & v, bool skip_line) noexcept
       std::cout << std::endl;
 }
 
-template<typename T>
+template<typename T, std::enable_if_t<std::is_floating_point<T>::value, bool>>
 bool within_tol_abs(T val1, T val2, T tol) noexcept
 {
    T abs_val = val1 > val2 ? (val1 - val2) : (val2 - val1);
    return abs_val <= tol;
 }
 
-template<typename T>
+template<typename T, std::enable_if_t<std::is_floating_point<T>::value, bool>>
 bool within_tol_abs(const Vector<T> & v1, const Vector<T> & v2, T tol) noexcept
 {
    ASSERT_CPU( v1.size() == v2.size() );
