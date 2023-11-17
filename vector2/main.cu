@@ -38,6 +38,18 @@ __global__ void GPUVectorAdd(const V1 v1, const V2 v2, V3 v3)
       v3[ind] = v1[ind] + v2[ind];
 }
 
+// V2 and V3 do not necessarily have the same value_type
+// v3 already contains v1
+template<typename V2, typename V3>
+__global__ void GPUVectorAdd(const V2 v2, V3 v3)
+{
+   long int ind = blockIdx.x * blockDim.x + threadIdx.x;
+   long int N = v2.size();
+
+   for(; ind < N; ind += blockDim.x*gridDim.x)
+      v3[ind] += v2[ind];
+}
+
 int main()
 {
    cudaSetupDevice();

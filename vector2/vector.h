@@ -84,10 +84,12 @@ public:
    ~Vector() noexcept;
 
    void rand() noexcept;
+   T* data() noexcept;
+   const T* data() const noexcept;
    size_type size() const noexcept;
 
-   T & operator[](size_type i) noexcept { return data[i]; }
-   const T & operator[](size_type i) const noexcept { return data[i]; }
+   T & operator[](size_type i) noexcept { return ptr[i]; }
+   const T & operator[](size_type i) const noexcept { return ptr[i]; }
 
    friend GPUVector<T> ToDevice<>(const Vector<T> & x) noexcept;
    friend Vector<T> FromDevice<>(const GPUVector<T> & x) noexcept;
@@ -95,7 +97,7 @@ public:
    friend void FromDevice<>(const GPUVector<T> & x, Vector<T> & y) noexcept;
 
 private:
-   T* data;
+   T* ptr;
    size_type sz;
 };
 
@@ -126,27 +128,27 @@ public:
    struct GPUVectorDevice_
    {
    public:
-      GPUVectorDevice_(T* d, size_type s) : data{d}, sz{s} {}
+      GPUVectorDevice_(T* p, size_type s) : ptr{p}, sz{s} {}
 
       __device__ size_type size() const { return sz; }
-      __device__ T & operator[](size_type i) { return data[i]; }
-      __device__ const T & operator[](size_type i) const { return data[i]; }
+      __device__ T & operator[](size_type i) { return ptr[i]; }
+      __device__ const T & operator[](size_type i) const { return ptr[i]; }
 
    private:
-      T* data;
+      T* ptr;
       size_type sz;
    };
 
    struct ConstGPUVectorDevice_
    {
    public:
-      ConstGPUVectorDevice_(const T* d, size_type s) : data{d}, sz{s} {}
+      ConstGPUVectorDevice_(const T* p, size_type s) : ptr{p}, sz{s} {}
 
       __device__ size_type size() const { return sz; }
-      __device__ const T & operator[](size_type i) const { return data[i]; }
+      __device__ const T & operator[](size_type i) const { return ptr[i]; }
 
    private:
-      const T* data;
+      const T* ptr;
       size_type sz;
    };
 
@@ -219,7 +221,8 @@ GPUVector<T> & GPUVector<T>::operator=(GPUVector<T> && v) noexcept
 {
    ASSERT_CPU( sz == v.sz );
    if(this != &v) {
-      ASSERT_CUDA_SUCCESS( cudaFree(ptr) );
+      if(ptr)
+         ASSERT_CUDA_SUCCESS( cudaFree(ptr) );
 
       sz = std::exchange(v.sz, 0);
       ptr = std::exchange(v.ptr, nullptr);
@@ -263,9 +266,9 @@ Vector<T>::Vector(size_type n) noexcept
    ASSERT_CPU( n > -1 );
    sz = n;
 
-   data = nullptr;
+   ptr = nullptr;
    if(n > 0)
-      ASSERT_CPU( data = (T*)std::calloc(sz, sizeof(T)) );
+      ASSERT_CPU( ptr = (T*)std::calloc(sz, sizeof(T)) );
 }
 
 
@@ -274,10 +277,10 @@ Vector<T>::Vector(const Vector<T> & v) noexcept
 {
    sz = v.sz;
 
-   data = nullptr;
+   ptr = nullptr;
    if(sz > 0) {
-      ASSERT_CPU( data = (T*)std::malloc(sz*sizeof(T)) );
-      std::memcpy(data, v.data, sz*sizeof(T));
+      ASSERT_CPU( ptr = (T*)std::malloc(sz*sizeof(T)) );
+      std::memcpy(ptr, v.ptr, sz*sizeof(T));
    }
 }
 
@@ -286,7 +289,7 @@ template<typename T>
 Vector<T>::Vector(Vector<T> && v) noexcept
 {
    sz = std::exchange(v.sz, 0);
-   data = std::exchange(v.data, nullptr);
+   ptr = std::exchange(v.ptr, nullptr);
 }
 
 
@@ -295,7 +298,7 @@ Vector<T> & Vector<T>::operator=(const Vector<T> & v) noexcept
 {
    ASSERT_CPU( sz == v.sz );
    if(this != &v && sz > 0) {
-      std::memcpy(data, v.data, sz*sizeof(T));
+      std::memcpy(ptr, v.ptr, sz*sizeof(T));
    }
    return *this;
 }
@@ -306,10 +309,11 @@ Vector<T> & Vector<T>::operator=(Vector<T> && v) noexcept
 {
    ASSERT_CPU( sz == v.sz );
    if(this != &v) {
-      std::free(data);
+      if(ptr)
+         std::free(ptr);
 
       sz = std::exchange(v.sz, 0);
-      data = std::exchange(v.data, nullptr);
+      ptr = std::exchange(v.ptr, nullptr);
    }
    return *this;
 }
@@ -318,8 +322,8 @@ Vector<T> & Vector<T>::operator=(Vector<T> && v) noexcept
 template<typename T>
 Vector<T>::~Vector() noexcept
 {
-   if(data)
-      std::free(data);
+   if(ptr)
+      std::free(ptr);
 }
 
 
@@ -330,7 +334,21 @@ void Vector<T>::rand() noexcept
    microseconds ms = duration_cast<microseconds> (system_clock::now().time_since_epoch());
    std::srand(static_cast<unsigned>(std::time(0)) + static_cast<unsigned>(ms.count()));
    for(size_type i = 0L; i < sz; ++i)
-      data[i] = T(std::rand())/T(RAND_MAX);
+      ptr[i] = T(std::rand())/T(RAND_MAX);
+}
+
+
+template<typename T>
+T* Vector<T>::data() noexcept
+{
+   return ptr;
+}
+
+
+template<typename T>
+const T* Vector<T>::data() const noexcept
+{
+   return ptr;
 }
 
 
@@ -363,7 +381,8 @@ template<typename T>
 void ToDevice(const Vector<T> & x, GPUVector<T> & y) noexcept
 {
    ASSERT_CPU( x.sz == y.sz );
-   ASSERT_CUDA_SUCCESS( cudaMemcpy(y.ptr, x.data, x.sz*sizeof(T), cudaMemcpyHostToDevice) );
+   if(x.sz > 0)
+      ASSERT_CUDA_SUCCESS( cudaMemcpy(y.ptr, x.ptr, x.sz*sizeof(T), cudaMemcpyHostToDevice) );
 }
 
 
@@ -371,7 +390,8 @@ template<typename T>
 void FromDevice(const GPUVector<T> & x, Vector<T> & y) noexcept
 {
    ASSERT_CPU( x.sz == y.sz );
-   ASSERT_CUDA_SUCCESS( cudaMemcpy(y.data, x.ptr, x.sz*sizeof(T), cudaMemcpyDeviceToHost) );
+   if(x.sz > 0)
+      ASSERT_CUDA_SUCCESS( cudaMemcpy(y.ptr, x.ptr, x.sz*sizeof(T), cudaMemcpyDeviceToHost) );
 }
 
 
@@ -379,7 +399,7 @@ template<typename T>
 void print(const Vector<T> & v, bool skip_line) noexcept
 {
    for(typename Vector<T>::size_type i = 0L; i < v.size(); ++i)
-      std::cout << v[i] << '\n';
+      std::cout << v[i] << std::endl;
    if(skip_line)
       std::cout << std::endl;
 }
